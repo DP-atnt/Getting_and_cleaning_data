@@ -54,12 +54,12 @@ names(clean)<-gsub("[()]","",names(clean))
 names(clean)<-gsub(",","",names(clean))
 names(clean)<-gsub("Acc","Acceleration",names(clean))
 
-#at this point the data is tidy and now clean all unused variables
+#at this point the data is clean and we need to remove all unused variables
 rm(y.train,y.test,X.test,X.train,whole_set_df,variables,train_df,test_df,
    subject.test,subject.train,stds,means,filt_set_df,fileUrl,colms,activities)
 
 #create summary of data and save to disk
 action<-group_by(clean,activity,subject)
 final_data<-summarize_each(action,funs(mean))
-write.csv(final_data,"./Project/final_data.csv")
+write.table(final_data,"./Project/final_data.txt",row.name=FALSE)
 ```
