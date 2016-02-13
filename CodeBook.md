@@ -3,61 +3,11 @@
 This file contains the variables used for this project and a list of the manipulations done to the raw data.
 The manipulation of the raw data assumes the package dlyr is installed in the host. The first step is to create a directory
 that will hold the raw data and the results. This directory is called "Project" and the script does check if it exists, if it
-does not, it will create one, otherwise it will use the existing folder.
-The script then calls the URL of the data set repository and downloads it to disk
-#the following chunk of code downloads the original data set
-if(!file.exists("./Project")){dir.create("./Project")}
-fileUrl <-"https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
-download.file(fileUrl,destfile="./Project/getdata-projectfiles-UCI HAR Dataset.zip")
-unzip("./Project/getdata-projectfiles-UCI HAR Dataset.zip",exdir = "./Project")
-
-#the next step is to read the files into R.loading the train data
-X.train <-read.table("./Project/UCI HAR Dataset/train/X_train.txt")
-y.train <-read.table("./Project/UCI HAR Dataset/train/y_train.txt")
-subject.train <-read.table("./Project/UCI HAR Dataset/train/subject_train.txt")
-
-#loading the test data
-X.test <-read.table("./Project/UCI HAR Dataset/test/X_test.txt")
-y.test <-read.table("./Project/UCI HAR Dataset/test/y_test.txt")
-subject.test <-read.table("./Project/UCI HAR Dataset/test/subject_test.txt")
-
-#loading activity and variable names
-variables<-read.table("./Project/UCI HAR Dataset/features.txt")
-activities<-read.table("./Project/UCI HAR Dataset/activity_labels.txt")
-
-#joining the train and test data and then the whole set
-train_df<-cbind(subject.train, y.train, X.train)
-test_df<-cbind(subject.test, y.test, X.test)
-whole_set_df<-rbind(train_df,test_df)
-
-#setting the right names for the variables.
-colnames(whole_set_df)<-c("subject","activity",as.character(variables$V2))
-
-#extracting ID, activity, mean and std columns and these to create the data frame with relevant variables only
-means <- grep("[Mm]ean",names(whole_set_df),value = FALSE)
-stds<-grep("[Ss]td",names(whole_set_df))
-colms<-sort(c(1,2,means,stds))
-filt_set_df<-whole_set_df[, colms]
-
-#replacing activity names in dataset
-names(activities)<-c("ID","activity")
-clean<-merge(activities,filt_set_df,by.x = "ID",by.y = "activity")
-clean<-clean[,-1]
-
-#changing to descriptive names
-names(clean)<-gsub("f[B]*","frequencyB",names(clean))
-names(clean)<-gsub("^t[B]","timeB",names(clean))
-names(clean)<-gsub("^t[G]","timeG",names(clean))
-names(clean)<-gsub("-","",names(clean))
-names(clean)<-gsub("[()]","",names(clean))
-names(clean)<-gsub(",","",names(clean))
-names(clean)<-gsub("Acc","Acceleration",names(clean))
-
-#at this point the data is tidy and now clean all unused variables
-rm(y.train,y.test,X.test,X.train,whole_set_df,variables,train_df,test_df,
-   subject.test,subject.train,stds,means,filt_set_df,fileUrl,colms,activities)
-
-#create summary of data and save to disk
-action<-group_by(clean,activity,subject)
-final_data<-summarize_each(action,funs(mean))
-write.csv(final_data,"./Project/final_data.csv")
+does not, it will create one, otherwise it will use the existing "Project" folder.
+The script then calls the URL of the data set repository and downloads it to disk. This data set is part of the UCI assets and is meant to perform "Human Activity Recognition Using Smartphones". The researchers captured the readings of the accelerometer and gyroscope of a Samsung GS2 on a group of 30 people performing the following activities:
+ALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING.
+The sensors produced an set of 561 variables ("features") capturing acceleration and rotation on multiple axis. The data has been filtered to separate the effects of gravity, and multiple descriptive statistics have been calculated. The data set is split on a train (30% of observations) and test set (70%) . These sets are in turn is split in 3 files: X.train contains the values meausured or calculated, one observation per line on a space delimited file, y.train contains the subject identity per record (observation) and subject.train contains the subject ID (values 1-30) per record. A similar structure is used in the Test data set.
+These files are .txt and are loaded into R wiht read.table. The "features" file contains the names of the variables, and the "activity_labels" is a table that links the activity ID with the activity name.
+The script then column binds the subject, y.train and X.train files, the corresponding test files, and they row binds the resulting two frames. Next, the names of the variables are replaced (V1 to Vx were introduced in the previous step) and the subject and activity variables are so labeled.
+For this project only the variables with the "Mean" and Standard Deviation (std) values are selected using Grep and regular expressions to index the appropiate columns. The resulting data frame contains 88 variables, down from 563. Next the script uses nerging to replace the activiy labels (numeric factors) with textual descriptions. The data set contains multiple samples of the same activity for the same individual so this needs to be addressed in order to tidy this dataset.. It then cleans up the variable names by expanding "t" into "time", "f" into "frequency", and "Acc" into "Acceleration", special characters comma, dash and parenthesis are removed from variable names as well. At this point scrip cleans (deletes) all unused variables.
+Finally, the script creates a new data frame where the data is grouped by activity and the mean of multiple measurementes of each individual is calculated. The resulting data_frame is now sent to disk using write.table()
